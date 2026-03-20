@@ -1,0 +1,1 @@
+https://www.pro-football-reference.com/ - place to obtain team statistics in order to make our entrie dataset
