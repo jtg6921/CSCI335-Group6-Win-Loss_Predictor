@@ -1,0 +1,4 @@
+https://pmc.ncbi.nlm.nih.gov/articles/PMC12463883/ - paper on a few methods to create a win loss predictor for the nfl.
+
+https://www.sciencedirect.com/science/article/pii/S2772662224001413 - paper that goes over a model for predicting soccer game
+wins and losses
