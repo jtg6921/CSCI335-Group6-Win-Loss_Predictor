@@ -20,6 +20,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = PROJECT_ROOT / "data" / "ML_Ready_NFL_2024.csv"
@@ -153,6 +156,8 @@ def main() -> None:
     X = df[FEATURE_COLUMNS].to_numpy(dtype=float)
     y = df["Home_Win"].to_numpy(dtype=int)
 
+    
+
     X_train, y_train = X[train_m], y[train_m]
     X_val, y_val = X[val_m], y[val_m]
     X_test, y_test = X[test_m], y[test_m]
@@ -182,7 +187,70 @@ def main() -> None:
     )
     model.fit(X_train, y_train)
 
-    print("\nMetrics (probability = P(home win)):")
+    print("\nMetrics for Logistic Regression (probability = P(home win)):")
+    evaluate_split("train", y_train, model.predict_proba(X_train)[:, 1])
+    evaluate_split("val  ", y_val, model.predict_proba(X_val)[:, 1])
+    evaluate_split("test ", y_test, model.predict_proba(X_test)[:, 1])
+
+    model = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            (
+                "clf",
+                RandomForestClassifier(
+                    n_estimators=75,
+                    max_depth=5,
+                    class_weight="balanced",
+                    random_state=42,
+                ),
+            ),
+        ]
+    )
+
+    model.fit(X_train, y_train)
+
+    print("\nMetrics for Random Forest (probability = P(home win)):")
+    evaluate_split("train", y_train, model.predict_proba(X_train)[:, 1])
+    evaluate_split("val  ", y_val, model.predict_proba(X_val)[:, 1])
+    evaluate_split("test ", y_test, model.predict_proba(X_test)[:, 1])
+
+    model = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            (
+                "clf",
+                KNeighborsClassifier(
+                    n_neighbors=7,
+                ),
+            ),
+        ]
+    )
+
+    model.fit(X_train, y_train)
+
+    print("\nMetrics for KNN (probability = P(home win)):")
+    evaluate_split("train", y_train, model.predict_proba(X_train)[:, 1])
+    evaluate_split("val  ", y_val, model.predict_proba(X_val)[:, 1])
+    evaluate_split("test ", y_test, model.predict_proba(X_test)[:, 1])
+
+    model = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            (
+                "clf",
+                MLPClassifier(
+                    max_iter=1000,
+                    random_state=35,
+                    hidden_layer_sizes=(48,16),
+                    activation='relu',
+                ),
+            ),
+        ]
+    )
+
+    model.fit(X_train, y_train)
+
+    print("\nMetrics for NN (probability = P(home win)):")
     evaluate_split("train", y_train, model.predict_proba(X_train)[:, 1])
     evaluate_split("val  ", y_val, model.predict_proba(X_val)[:, 1])
     evaluate_split("test ", y_test, model.predict_proba(X_test)[:, 1])
