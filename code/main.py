@@ -239,8 +239,8 @@ def main() -> None:
             (
                 "clf",
                 MLPClassifier(
-                    max_iter=1000,
-                    random_state=35,
+                    max_iter=2000,
+                    random_state=42,
                     hidden_layer_sizes=(48,16),
                     activation='relu',
                 ),
