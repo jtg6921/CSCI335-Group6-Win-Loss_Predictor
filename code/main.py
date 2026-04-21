@@ -26,7 +26,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score
+from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score, accuracy_score, precision_score, f1_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
@@ -233,10 +233,13 @@ def week_masks(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     return train, val, test
 
 
-def compute_split_metrics(y_true: np.ndarray, proba: np.ndarray) -> dict[str, float]:
+def compute_split_metrics(y_true: np.ndarray, proba: np.ndarray, pred: np.ndarray) -> dict[str, float]:
     m: dict[str, float] = {
         "log_loss": float(log_loss(y_true, proba)),
         "brier": float(brier_score_loss(y_true, proba)),
+        "accuracy": float(accuracy_score(y_true, pred)),
+        "precision": float(precision_score(y_true, pred)),
+        "f1_score": float(f1_score(y_true, pred))
     }
     try:
         m["roc_auc"] = float(roc_auc_score(y_true, proba))
@@ -245,11 +248,13 @@ def compute_split_metrics(y_true: np.ndarray, proba: np.ndarray) -> dict[str, fl
     return m
 
 
-def evaluate_split(name: str, y_true: np.ndarray, proba: np.ndarray) -> None:
-    met = compute_split_metrics(y_true, proba)
+def evaluate_split(name: str, y_true: np.ndarray, proba: np.ndarray, pred: np.ndarray) -> None:
+    met = compute_split_metrics(y_true, proba, pred)
     print(
         f"  {name}: log_loss={met['log_loss']:.4f}  "
-        f"brier={met['brier']:.4f}  roc_auc={met['roc_auc']:.4f}"
+        f"brier={met['brier']:.4f}  roc_auc={met['roc_auc']:.4f}  "
+        f"accuracy={met['accuracy']:.4f}  precision={met['precision']:.4f}  "
+        f"f1_score={met['f1_score']:.4f}"
     )
 
 
@@ -344,9 +349,10 @@ def run_model(
     model = make_pipeline(clf)
     model.fit(X_train, y_train)
     print(f"\nMetrics for {name} (probability = P(home win)):")
-    evaluate_split("train", y_train, model.predict_proba(X_train)[:, 1])
-    evaluate_split("val  ", y_val, model.predict_proba(X_val)[:, 1])
-    evaluate_split("test ", y_test, model.predict_proba(X_test)[:, 1])
+    
+    evaluate_split("train", y_train, model.predict_proba(X_train)[:, 1], model.predict(X_train))
+    evaluate_split("val  ", y_val, model.predict_proba(X_val)[:, 1], model.predict(X_val))
+    evaluate_split("test ", y_test, model.predict_proba(X_test)[:, 1], model.predict(X_test))
 
 
 def main() -> None:
@@ -397,9 +403,9 @@ def main() -> None:
     )
     lr_model.fit(X_train, y_train)
     lr_metrics = {
-        "train": compute_split_metrics(y_train, lr_model.predict_proba(X_train)[:, 1]),
-        "val": compute_split_metrics(y_val, lr_model.predict_proba(X_val)[:, 1]),
-        "test": compute_split_metrics(y_test, lr_model.predict_proba(X_test)[:, 1]),
+        "train": compute_split_metrics(y_train, lr_model.predict_proba(X_train)[:, 1], lr_model.predict(X_train)),
+        "val": compute_split_metrics(y_val, lr_model.predict_proba(X_val)[:, 1], lr_model.predict(X_val)),
+        "test": compute_split_metrics(y_test, lr_model.predict_proba(X_test)[:, 1], lr_model.predict(X_test)),
     }
     write_logistic_regression_results_md(
         LOGISTIC_RESULTS_MD,
@@ -409,9 +415,9 @@ def main() -> None:
     )
 
     print("\nMetrics for Logistic Regression (probability = P(home win)):")
-    evaluate_split("train", y_train, lr_model.predict_proba(X_train)[:, 1])
-    evaluate_split("val  ", y_val, lr_model.predict_proba(X_val)[:, 1])
-    evaluate_split("test ", y_test, lr_model.predict_proba(X_test)[:, 1])
+    evaluate_split("train", y_train, lr_model.predict_proba(X_train)[:, 1], lr_model.predict(X_train))
+    evaluate_split("val  ", y_val, lr_model.predict_proba(X_val)[:, 1], lr_model.predict(X_val))
+    evaluate_split("test ", y_test, lr_model.predict_proba(X_test)[:, 1], lr_model.predict(X_test))
     print(f"\nWrote Logistic Regression report to {LOGISTIC_RESULTS_MD.relative_to(PROJECT_ROOT)}")
 
     if args.lr_only:
