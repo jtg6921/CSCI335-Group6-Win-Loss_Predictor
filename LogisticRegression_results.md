@@ -1,6 +1,6 @@
 # Logistic Regression — NFL home win (2024)
 
-*Generated: 2026-04-21 21:38:59 UTC*
+*Generated: 2026-04-22 06:35:26 UTC*
 
 ## How to train and evaluate
 
@@ -44,6 +44,12 @@ Metrics use predicted **P(home team wins)** vs label `Home_Win`.
 - **Log loss** — lower is better; penalizes overconfident wrong probabilities.
 - **Brier** — lower is better; mean squared error of probabilities vs 0/1 outcome.
 - **ROC-AUC** — higher is better; ranking quality (not calibration).
+
+## Visualizations
+
+![Metrics by split](figs/lr_metrics_bar.png)
+
+![Confusion matrix (test, threshold=0.5)](figs/lr_confusion_matrix_test.png)
 
 ## Features used
 
