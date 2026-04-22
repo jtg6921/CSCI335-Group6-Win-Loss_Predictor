@@ -1,6 +1,6 @@
 # Logistic Regression — NFL home win (2024)
 
-*Generated: 2026-04-22 06:35:26 UTC*
+*Generated: 2026-04-22 15:55:21 UTC*
 
 ## How to train and evaluate
 
@@ -21,7 +21,7 @@ python code/main.py --lr-only
 
 ## Data and split
 
-- **CSV:** `data/ML_Ready_NFL_2024.csv`
+- **CSV:** `data\ML_Ready_NFL_2024.csv`
 - **Train:** regular season weeks **1–12** (179 games)
 - **Validation:** weeks **13–14** (29 games)
 - **Test:** week **>14** (late season + playoffs; 77 games)
@@ -47,9 +47,9 @@ Metrics use predicted **P(home team wins)** vs label `Home_Win`.
 
 ## Visualizations
 
-![Metrics by split](figs/lr_metrics_bar.png)
+![Metrics by split](figs\lr_metrics_bar.png)
 
-![Confusion matrix (test, threshold=0.5)](figs/lr_confusion_matrix_test.png)
+![Confusion matrix (test, threshold=0.5)](figs\lr_confusion_matrix_test.png)
 
 ## Features used
 

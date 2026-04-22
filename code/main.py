@@ -49,6 +49,12 @@ LOGISTIC_RESULTS_MD = PROJECT_ROOT / "LogisticRegression_results.md"
 FIGS_DIR = PROJECT_ROOT / "figs"
 LR_METRICS_FIG = FIGS_DIR / "lr_metrics_bar.png"
 LR_CONFUSION_FIG = FIGS_DIR / "lr_confusion_matrix_test.png"
+RF_METRICS_FIG = FIGS_DIR / "rf_metrics_bar.png"
+RF_CONFUSION_FIG = FIGS_DIR / "rf_confusion_matrix_test.png"
+KNN_METRICS_FIG = FIGS_DIR / "knn_metrics_bar.png"
+KNN_CONFUSION_FIG = FIGS_DIR / "knn_confusion_matrix_test.png"
+MLP_METRICS_FIG = FIGS_DIR / "mlp_metrics_bar.png"
+MLP_CONFUSION_FIG = FIGS_DIR / "mlp_confusion_matrix_test.png"
 
 # Playoff rows use string labels; map to synthetic week numbers after regular season (18)
 _PLAYOFF_WEEK = {
@@ -272,7 +278,44 @@ def evaluate_split(name: str, y_true: np.ndarray, proba: np.ndarray, pred: np.nd
     )
 
 
-def plot_lr_metrics_bar(
+def plot_confusion_matrix(
+    model: str,
+    y_true: np.ndarray,
+    proba: np.ndarray,
+    path: Path,
+    threshold: float = 0.5,
+) -> None:
+    """Confusion matrix on the test set at the given probability threshold."""
+    y_pred = (proba >= threshold).astype(int)
+    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
+    tick_labels = ["Away win (0)", "Home win (1)"]
+
+    fig, ax = plt.subplots(figsize=(4.5, 4.0))
+    im = ax.imshow(cm, cmap="Blues")
+    ax.set_xticks([0, 1])
+    ax.set_yticks([0, 1])
+    ax.set_xticklabels(tick_labels)
+    ax.set_yticklabels(tick_labels)
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("Actual")
+    ax.set_title(f"{model} confusion matrix (test, threshold={threshold:.2f})")
+
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(
+                j, i, f"{cm[i, j]}",
+                ha="center", va="center",
+                color="black",
+                fontsize=14, fontweight="bold",
+            )
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.tight_layout()
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
+
+def plot_metrics_bar(
+    model: str,
     metrics: dict[str, dict[str, float]],
     path: Path,
 ) -> None:
@@ -300,120 +343,9 @@ def plot_lr_metrics_bar(
     ax.set_xticklabels(metric_labels)
     ax.set_ylim(0, 1.0)
     ax.set_ylabel("Score")
-    ax.set_title("Logistic Regression — metrics by split")
+    ax.set_title(f"{model} — metrics by split")
     ax.grid(axis="y", linestyle=":", alpha=0.5)
     ax.legend(loc="upper right")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
-    fig.savefig(path, dpi=160)
-    plt.close(fig)
-
-
-def plot_lr_confusion_matrix(
-    y_true: np.ndarray,
-    proba: np.ndarray,
-    path: Path,
-    threshold: float = 0.5,
-) -> None:
-    """Confusion matrix on the test set at the given probability threshold."""
-    y_pred = (proba >= threshold).astype(int)
-    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
-    tick_labels = ["Away win (0)", "Home win (1)"]
-
-    fig, ax = plt.subplots(figsize=(4.5, 4.0))
-    im = ax.imshow(cm, cmap="Blues")
-    ax.set_xticks([0, 1])
-    ax.set_yticks([0, 1])
-    ax.set_xticklabels(tick_labels)
-    ax.set_yticklabels(tick_labels)
-    ax.set_xlabel("Predicted")
-    ax.set_ylabel("Actual")
-    ax.set_title(f"LR confusion matrix (test, threshold={threshold:.2f})")
-
-    threshold_color = cm.max() / 2.0 if cm.size else 0
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            ax.text(
-                j, i, f"{cm[i, j]}",
-                ha="center", va="center",
-                color="white" if cm[i, j] > threshold_color else "black",
-                fontsize=14, fontweight="bold",
-            )
-    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
-    fig.savefig(path, dpi=160)
-    plt.close(fig)
-
-
-def plot_lr_metrics_bar(
-    metrics: dict[str, dict[str, float]],
-    path: Path,
-) -> None:
-    """Grouped bar chart: train/val/test bars per metric (Log loss, Brier, ROC-AUC)."""
-    metric_keys = ["log_loss", "brier", "roc_auc"]
-    metric_labels = ["Log loss", "Brier", "ROC-AUC"]
-    split_order = ["train", "val", "test"]
-    split_labels = ["Train", "Validation", "Test"]
-
-    x = np.arange(len(metric_keys))
-    width = 0.25
-
-    fig, ax = plt.subplots(figsize=(7.5, 4.5))
-    for i, split in enumerate(split_order):
-        vals = [metrics[split][k] for k in metric_keys]
-        bars = ax.bar(x + (i - 1) * width, vals, width, label=split_labels[i])
-        for b, v in zip(bars, vals):
-            ax.annotate(
-                f"{v:.3f}",
-                (b.get_x() + b.get_width() / 2, b.get_height()),
-                ha="center", va="bottom", fontsize=8,
-            )
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(metric_labels)
-    ax.set_ylim(0, 1.0)
-    ax.set_ylabel("Score")
-    ax.set_title("Logistic Regression — metrics by split")
-    ax.grid(axis="y", linestyle=":", alpha=0.5)
-    ax.legend(loc="upper right")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
-    fig.savefig(path, dpi=160)
-    plt.close(fig)
-
-
-def plot_lr_confusion_matrix(
-    y_true: np.ndarray,
-    proba: np.ndarray,
-    path: Path,
-    threshold: float = 0.5,
-) -> None:
-    """Confusion matrix on the test set at the given probability threshold."""
-    y_pred = (proba >= threshold).astype(int)
-    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
-    tick_labels = ["Away win (0)", "Home win (1)"]
-
-    fig, ax = plt.subplots(figsize=(4.5, 4.0))
-    im = ax.imshow(cm, cmap="Blues")
-    ax.set_xticks([0, 1])
-    ax.set_yticks([0, 1])
-    ax.set_xticklabels(tick_labels)
-    ax.set_yticklabels(tick_labels)
-    ax.set_xlabel("Predicted")
-    ax.set_ylabel("Actual")
-    ax.set_title(f"LR confusion matrix (test, threshold={threshold:.2f})")
-
-    threshold_color = cm.max() / 2.0 if cm.size else 0
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            ax.text(
-                j, i, f"{cm[i, j]}",
-                ha="center", va="center",
-                color="white" if cm[i, j] > threshold_color else "black",
-                fontsize=14, fontweight="bold",
-            )
-    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
     fig.savefig(path, dpi=160)
@@ -528,10 +460,27 @@ def run_model(
     model = make_pipeline(clf)
     model.fit(X_train, y_train)
     print(f"\nMetrics for {name} (probability = P(home win)):")
-    
     evaluate_split("train", y_train, model.predict_proba(X_train)[:, 1], model.predict(X_train))
     evaluate_split("val  ", y_val, model.predict_proba(X_val)[:, 1], model.predict(X_val))
     evaluate_split("test ", y_test, model.predict_proba(X_test)[:, 1], model.predict(X_test))
+    
+    model_metrics = {
+        "train": compute_split_metrics(y_train, model.predict_proba(X_train)[:, 1], model.predict(X_train)),
+        "val": compute_split_metrics(y_val, model.predict_proba(X_val)[:, 1], model.predict(X_val)),
+        "test": compute_split_metrics(y_test, model.predict_proba(X_test)[:, 1], model.predict(X_test)),
+    }
+
+    test_proba = model.predict_proba(X_test)[:, 1]
+    if(name == "RF"):
+        plot_metrics_bar(name, model_metrics, RF_METRICS_FIG)
+        plot_confusion_matrix(name, y_test, test_proba, RF_CONFUSION_FIG)
+    elif(name == "KNN"):
+        plot_metrics_bar(name, model_metrics, KNN_METRICS_FIG)
+        plot_confusion_matrix(name, y_test, test_proba, KNN_CONFUSION_FIG)
+    elif(name == "MLP"):
+        plot_metrics_bar(name, model_metrics, MLP_METRICS_FIG)
+        plot_confusion_matrix(name, y_test, test_proba, MLP_CONFUSION_FIG)
+
 
 
 def main() -> None:
@@ -587,8 +536,8 @@ def main() -> None:
         "test": compute_split_metrics(y_test, lr_model.predict_proba(X_test)[:, 1], lr_model.predict(X_test)),
     }
     test_proba = lr_model.predict_proba(X_test)[:, 1]
-    plot_lr_metrics_bar(lr_metrics, LR_METRICS_FIG)
-    plot_lr_confusion_matrix(y_test, test_proba, LR_CONFUSION_FIG)
+    plot_metrics_bar("LR", lr_metrics, LR_METRICS_FIG)
+    plot_confusion_matrix("LR", y_test, test_proba, LR_CONFUSION_FIG)
 
     write_logistic_regression_results_md(
         LOGISTIC_RESULTS_MD,
@@ -609,7 +558,7 @@ def main() -> None:
         return
 
     run_model(
-        "Random Forest",
+        "RF",
         RandomForestClassifier(
             n_estimators=300,
             max_depth=6,
